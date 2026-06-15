@@ -2,8 +2,8 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>message</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Heart Landing Protocol [V15 - Mobile Perfect & Fade-In]</title>
   <style>
     body {
       margin: 0;
@@ -15,6 +15,10 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      /* Заборона виділення тексту на телефоні (щоб не було синього екрана при випадковому тапі) */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     body::after {
@@ -39,6 +43,7 @@
       align-items: center;
       gap: 20px;
       transition: opacity 0.5s ease;
+      padding: 0 20px; /* Відступи для мобільних екранів */
     }
 
     #status-text {
@@ -66,9 +71,12 @@
       box-shadow: 0 0 10px rgba(255, 0, 51, 0.1);
       text-transform: uppercase;
       letter-spacing: 2px;
+      /* Щоб кнопка не виглядала стандартною на iPhone */
+      -webkit-appearance: none;
+      border-radius: 0;
     }
 
-    button:hover {
+    button:hover, button:active {
       background: #ff0033;
       color: #050001;
       box-shadow: 0 0 20px rgba(255, 0, 51, 0.4);
@@ -117,22 +125,28 @@
 
   class Particle {
     constructor() {
+      // Визначаємо, чи це мобільний екран (ширина менше 600px)
+      // Якщо так, зменшуємо розмір серця, щоб воно влізло
+      const isMobile = window.innerWidth < 600;
+      const mobileScale = isMobile ? 0.5 : 1; // На телефоні серце буде вдвічі меншим від базового розміру
+
       let validPoint = false;
       while (!validPoint) {
         this.t = Math.random() * Math.PI * 2;
         let rawX = 16 * Math.pow(Math.sin(this.t), 3);
-
+        
         if (Math.abs(rawX) < 3 && Math.random() < 0.8) {
-          validPoint = false;
+          validPoint = false; 
         } else {
           validPoint = true;
         }
       }
 
+      // Застосовуємо мобільний масштаб до розміру серця
       if (Math.random() > 0.25) {
-        this.baseScale = Math.random() * 3 + 15;
+        this.baseScale = (Math.random() * 3 + 15) * mobileScale; 
       } else {
-        this.baseScale = Math.random() * 7 + 8;
+        this.baseScale = (Math.random() * 7 + 8) * mobileScale;  
       }
 
       this.x = Math.random() * canvas.width;
@@ -142,12 +156,13 @@
 
       const phrases = ["I love you", "B + I", "<3", "Love Story"];
       this.text = phrases[Math.floor(Math.random() * phrases.length)];
+      
+      // На телефоні шрифт також трохи зменшуємо для акуратності
+      const baseFontSize = Math.floor(Math.random() * 5 + 9);
+      this.fontSize = isMobile ? baseFontSize * 0.8 : baseFontSize;
 
-      this.fontSize = Math.floor(Math.random() * 5 + 9);
-
-      // Встановлюємо фінальну цільову непрозорість та початкову (повністю прозору)
       this.targetOpacity = Math.random() * 0.5 + 0.4;
-      this.currentOpacity = 0;
+      this.currentOpacity = 0; 
     }
 
     update() {
@@ -155,33 +170,27 @@
       const pulse = 1 + 0.04 * Math.sin(time);
 
       const targetPoint = getHeartPoint(this.t, this.baseScale * pulse);
-
+      
       const currentTargetX = canvas.width / 2 + targetPoint.x;
-      const currentTargetY = canvas.height / 2 + targetPoint.y - 40;
+      const currentTargetY = canvas.height / 2 + targetPoint.y - (window.innerWidth < 600 ? 20 : 40);
 
-      // Плавний рух до цілі
       this.x += (currentTargetX - this.x) * this.speed;
       this.y += (currentTargetY - this.y) * this.speed;
 
-      // КІНЕМАТОГРАФІЧНИЙ FADE-IN: Плавне проявлення тексту
       this.currentOpacity += (this.targetOpacity - this.currentOpacity) * (this.speed * 1.5);
     }
 
     draw() {
       ctx.font = `bold ${this.fontSize}px 'Courier New'`;
-
-      // Використовуємо динамічну непрозорість для кольору
       ctx.fillStyle = `rgba(255, 0, 51, ${this.currentOpacity})`;
-
       ctx.shadowBlur = 4;
-      // Світіння також проявляється плавно разом із текстом
       ctx.shadowColor = `rgba(255, 0, 51, ${this.currentOpacity})`;
-
       ctx.fillText(this.text, this.x, this.y);
     }
   }
 
   function createParticles() {
+    // На телефоні можна залишити стільки ж частинок, буде виглядати ще щільніше і крутіше
     for (let i = 0; i < 700; i++) {
       particles.push(new Particle());
     }
